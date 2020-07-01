@@ -63,11 +63,11 @@ static void timer_gpio()
 {
   static int value = 0;
   int i=0;
-  for(i=0;i<5;i++)
+  for(i=0;i<10;i++)
   {	  
   printk (KERN_INFO "my_sender_thread sent a message at jiffies=%ld\n", jiffies);
   set_current_state(TASK_INTERRUPTIBLE);
-  schedule_timeout(3*HZ);
+  schedule_timeout(1*HZ);
 
   gpio_set_value(gpio_out, value);
   value = 1 - value;

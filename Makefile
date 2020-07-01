@@ -14,4 +14,4 @@ modules:modules/gpio
 
 clean:
 	make -C modules/gpio clean
-	rm src/main.o km-bbb-app lib/kmlib.a lib/*.o
+	rm src/*.o km-bbb-app lib/*.a lib/*.o 2> /dev/null
