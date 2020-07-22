@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include "../inc/gpio.h"
 #include "../inc/lcd.h"
+#include "../inc/adc.h"
+#include "../inc/rtc.h"
 #define LOW  0
 #define HIGH 1
 
@@ -21,6 +23,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <errno.h>
+#include "../inc/smbus.h"
 
 int file;
 int adapter_nr = 1;
@@ -44,7 +48,7 @@ enum Test_Case{
 	GPIO_TEST,
 	LCD_TEST,
 	UART_TEST,
-	I2C_SCANNING,
+	I2C_TEST,
 	ADC_TEST,
 	SPI2_ETHERNET,
 	SELF_DIAG
@@ -90,48 +94,35 @@ void KM_BBB_Button_Testcase(void){
         	 KM_GPIO_Write(9,0);     //BUZZER OFF
 }
 
-void I2C_Scanning(void){
-        int res;
-        file = open("/dev/i2c-1", O_RDWR);
-        if (file < 0) {
-                printf("Sorry, could not open file /dev/i2c-%d\n",1);
-                exit(1);
-        }
-	/*
-        if (ioctl(file, I2C_FUNCS, &funcs) < 0) {
-                printf("Sorry could not find the supported list of functions\n");
-                exit(1);
-        }
-	for(slave_addr=0;slave_addr<127;slave_addr++)
-	{
-        if (ioctl(file,I2C_SLAVE, slave_addr) < 0) {
-                printf("slave Add not set");
-		sleep(1);
-              
-        }
-	res = i2c_smbus_read_byte_data(file,0x00);
-           if (res < 0) {
-                         printf("Read error\n");
-                        // exit(1);
-                       }
-	   else 
-	   {
-		   printf("Device is Found:%d\n",slave_addr);
-		   slee(1);	
-		   }*/
-//}
+void I2C_Scanning(void)
+{
+        int res,i2c_bus=0;
+	char input_buffer[20];
+	char input_buffer1[20];
+	printf("Pls Enter i2c bus number like 0 or 1 or 2 :\n ");
+	scanf(" %d",&i2c_bus);
+	sprintf(input_buffer,"i2cdetect -y -r %d",i2c_bus);
+	system(input_buffer);
+	printf("Note: \'UU\' Means SLAVE is Busy   \n");
+
 }
 
-void SPI2Ethernet(){
-
+void SPI2Ethernet(void)
+{
+	int ret;
+	/*ret=open("/dev/spi",O_RDWR);
+        if(ret<0)
+	{
+		//printf("Dts file not added properly");
+		  printf("/dev/spi not create");
+	} */
 	system("ifconfig");
 	system("ping www.google.com");
-
 }
 
 int main(int argc, char *argv[])
 {
-	int option;
+	int option,rtc_status;
 	char yes='y';
 
 	KM_BBB_GPIO_Init();//Switches, LED, Buzzer Initalization
@@ -143,7 +134,7 @@ while(yes == 'y')
 	printf("\n1. GPIO Test Case\n");
 	printf("2. LCD Test Case\n");
 	printf("3. UART - 1,2,5 Test Case \n");
-	printf("4. I2C Scanning\n");
+	printf("4. I2C Test Case\n");
 	printf("5. ADC Test Case\n");
 	printf("6. SPI2Ethernet\n");
 	printf("7. KM-BBB Self Diagnostic\n");
@@ -153,13 +144,16 @@ while(yes == 'y')
 	switch(option)
 	{
 		case GPIO_TEST:
-			printf("1. GPIO Test\n");
-			printf("2. KM-BBB Button Test:");
+			printf("\t1. GPIO Test\n");
+			printf("\t2. KM-BBB Button Test:");
 			scanf("%d",&option);
+
 			if(option==1)	
 				GPIO_Testcase();
-			if(option==2)
+			else if (option==2)
 				KM_BBB_Button_Testcase();
+			else
+				printf("Chose correct option\n");
 			break;
 
 		case LCD_TEST:
@@ -170,11 +164,26 @@ while(yes == 'y')
 		case UART_TEST:
 			break;
 
-		case I2C_SCANNING:
-			I2C_Scanning();
+		case I2C_TEST:
+			printf("\t0. I2C Scanning...\n");
+			printf("\t1. RTC Set Date and Time\n");
+			printf("\t2. RTC Get Date and Time\n");
+			//printf("\t3. EEPROM Test");
+			scanf(" %d",&rtc_status);
+
+			if (rtc_status==0)
+				I2C_Scanning();
+			else if(rtc_status==1)
+				set_date_time();
+
+			else if(rtc_status==2)
+				get_date_time();
+			else
+				printf("Chose correct option\n");
 			break;
 
 		case ADC_TEST:
+			ADC_CHECK();
 			break;
 		
 		case SPI2_ETHERNET:
